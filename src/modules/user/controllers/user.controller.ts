@@ -6,22 +6,31 @@ import {
   Param,
   HttpCode,
   HttpStatus,
+  Res,
 } from '@nestjs/common';
 import { UserService } from '../services/user.service';
-import { CreateUserDTO, UserResponseDTO } from '../dtos/user.dto';
+import { UserDto } from '../dtos/user.dto';
+import { BaseController } from '@this/shared/utils/base.controller';
+import { Response } from 'express';
 
 @Controller('users')
-export class UserController {
-  constructor(private readonly userService: UserService) {}
+export class UserController extends BaseController {
+  constructor(private readonly userService: UserService) {
+    super();
+  }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createUserDto: CreateUserDTO): Promise<UserResponseDTO> {
-    return await this.userService.create(createUserDto);
+  async create(@Body() dto: UserDto, @Res() response: Response) {
+    const result = await this.userService.create(dto);
+
+    return this.handleResult(result, response, HttpStatus.CREATED);
   }
 
   @Get(':id')
-  async one(@Param('id') id: string): Promise<UserResponseDTO> {
-    return await this.userService.one(id);
+  async one(@Param('id') id: string, @Res() response: Response) {
+    const result = await this.userService.one(id);
+
+    return this.handleResult(result, response);
   }
 }

@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { User } from '../../entities/user.entity';
 import { PrismaUserRepository } from './prisma.user.repository';
 import { PrismaService } from '@this/shared/services/prisma/prisma.service';
+import { Result } from '@this/shared/utils/result';
 
 // Criação manual dos mocks
 class MockPrismaService {
@@ -33,7 +34,7 @@ describe('PrismaUserRepository', () => {
 
   describe('create', () => {
     it('should create and return a new user', async () => {
-      const user = new User('John Doe', 'john@example.com', 'password123');
+      const user = new User('John Doe', 'john@example.com', 'password123', '1');
       const createdUser = {
         id: '1',
         name: 'John Doe',
@@ -50,9 +51,7 @@ describe('PrismaUserRepository', () => {
 
       const result = await repository.create(user);
 
-      expect(result).toEqual(
-        new User('John Doe', 'john@example.com', 'password123', '1'),
-      );
+      expect(result).toEqual(Result.ok<User>(user));
       expect(createSpy).toHaveBeenCalledWith({
         data: {
           name: 'John Doe',
@@ -82,7 +81,9 @@ describe('PrismaUserRepository', () => {
       const result = await repository.one('1');
 
       expect(result).toEqual(
-        new User('John Doe', 'john@example.com', 'password123', '1'),
+        Result.ok<User>(
+          new User(user.name, user.email, user.password, user.id),
+        ),
       );
       expect(findUniqueSpy).toHaveBeenCalledWith({
         where: { id: '1' },

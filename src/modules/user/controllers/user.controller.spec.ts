@@ -1,11 +1,21 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UserController } from './user.controller';
 import { UserService } from '../services/user.service';
-import { CreateUserDTO, UserResponseDTO } from '../dtos/user.dto';
+import { UserDto } from '../dtos/user.dto';
+import { Result } from '@this/shared/utils/result';
+import { Response } from 'express';
+import { User } from '../entities/user.entity';
+import { UserController } from './user.controller';
 
 describe('UserController', () => {
   let userController: UserController;
   let userService: UserService;
+
+  const mockResponse = () => {
+    const res: Partial<Response> = {};
+    res.status = jest.fn().mockReturnValue(res);
+    res.json = jest.fn().mockReturnValue(res);
+    return res as Response;
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -30,57 +40,83 @@ describe('UserController', () => {
   });
 
   describe('create', () => {
-    it('should create a user', async () => {
-      const createUserDto: CreateUserDTO = {
+    it('should create a user and return status 201', async () => {
+      const dto: UserDto = {
         name: 'Test User',
-        email: 'test@example.com',
+        email: 'test@user.com',
         password: 'password123',
       };
-      const userResponse: UserResponseDTO = { id: '1', ...createUserDto };
-      jest.spyOn(userService, 'create').mockResolvedValue(userResponse);
+      const result = Result.ok<User>(
+        new User(dto.name, dto.email, dto.password, '1'),
+      );
+      const res = mockResponse();
 
-      const result: UserResponseDTO =
-        await userController.create(createUserDto);
-      expect(result).toEqual(userResponse);
-      expect(userService.create).toHaveBeenCalledWith(createUserDto);
+      jest.spyOn(userService, 'create').mockResolvedValue(result);
+
+      await userController.create(dto, res);
+
+      expect(userService.create).toHaveBeenCalledWith(dto);
+      expect(res.status).toHaveBeenCalledWith(201);
+      expect(res.json).toHaveBeenCalledWith(result.getValue());
     });
 
-    it('should handle errors', async () => {
-      const createUserDto: CreateUserDTO = {
+    it('should return an error if creation fails', async () => {
+      const dto: UserDto = {
         name: 'Test User',
-        email: 'test@example.com',
+        email: 'test@user.com',
         password: 'password123',
       };
-      jest
-        .spyOn(userService, 'create')
-        .mockRejectedValue(new Error('Error creating user'));
+      const result = Result.fail<User>('Error creating user');
+      const res = mockResponse();
 
-      await expect(userController.create(createUserDto)).rejects.toThrow(
-        'Error creating user',
-      );
+      jest.spyOn(userService, 'create').mockResolvedValue(result);
+
+      await userController.create(dto, res);
+
+      expect(userService.create).toHaveBeenCalledWith(dto);
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        message: result.getError(),
+      });
     });
   });
 
   describe('one', () => {
     it('should return a user by id', async () => {
-      const userResponse: UserResponseDTO = {
-        id: '1',
+      const id = '1';
+      const dto: UserDto = {
         name: 'Test User',
-        email: 'test@example.com',
+        email: 'test@user.com',
+        password: 'password123',
       };
-      jest.spyOn(userService, 'one').mockResolvedValue(userResponse);
+      const result = Result.ok<User>(
+        new User(dto.name, dto.email, dto.password, id),
+      );
+      const res = mockResponse();
 
-      const result: UserResponseDTO = await userController.one('1');
-      expect(result).toEqual(userResponse);
-      expect(userService.one).toHaveBeenCalledWith('1');
+      jest.spyOn(userService, 'one').mockResolvedValue(result);
+
+      await userController.one(id, res);
+
+      expect(userService.one).toHaveBeenCalledWith(id);
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith(result.getValue());
     });
 
-    it('should handle errors', async () => {
-      jest
-        .spyOn(userService, 'one')
-        .mockRejectedValue(new Error('User not found'));
+    it('should return an error if user not found', async () => {
+      const id = '1';
+      const result = Result.fail<User>('User not found');
+      const res = mockResponse();
 
-      await expect(userController.one('1')).rejects.toThrow('User not found');
+      jest.spyOn(userService, 'one').mockResolvedValue(result);
+
+      await userController.one(id, res);
+
+      expect(userService.one).toHaveBeenCalledWith(id);
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({
+        message: result.getError(),
+      });
     });
   });
 });
