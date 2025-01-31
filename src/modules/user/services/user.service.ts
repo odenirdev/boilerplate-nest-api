@@ -20,7 +20,7 @@ export class UserService {
 
     const user = new User({ name, email, password });
 
-    return this.userRepository.create({ user });
+    return this.userRepository.upsert({ user });
   }
 
   async one(params: { id: string }): Promise<Result<User>> {

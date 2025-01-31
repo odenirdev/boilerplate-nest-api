@@ -16,7 +16,7 @@ describe('PrismaUserRepository', () => {
           provide: PrismaService,
           useValue: {
             user: {
-              create: jest.fn(),
+              upsert: jest.fn(),
               findUnique: jest.fn(),
             },
           },
@@ -32,8 +32,8 @@ describe('PrismaUserRepository', () => {
     expect(repository).toBeDefined();
   });
 
-  describe('create', () => {
-    it('should create and return a new user', async () => {
+  describe('upsert', () => {
+    it('should upsert and return user', async () => {
       const user = new User({
         name: 'John Doe',
         email: 'john@example.com',
@@ -50,14 +50,19 @@ describe('PrismaUserRepository', () => {
       };
 
       const createSpy = jest
-        .spyOn(prismaService.user, 'create')
+        .spyOn(prismaService.user, 'upsert')
         .mockResolvedValue(createdUser);
 
-      const result = await repository.create({ user });
+      const result = await repository.upsert({ user });
 
       expect(result).toEqual(Result.ok<User>(user));
       expect(createSpy).toHaveBeenCalledWith({
-        data: {
+        where: { id: '1' },
+        update: {
+          name: 'John Doe',
+          password: 'password123',
+        },
+        create: {
           name: 'John Doe',
           email: 'john@example.com',
           password: 'password123',
@@ -74,15 +79,20 @@ describe('PrismaUserRepository', () => {
       });
 
       const createSpy = jest
-        .spyOn(prismaService.user, 'create')
+        .spyOn(prismaService.user, 'upsert')
         .mockRejectedValue(new Error('Database error'));
 
-      const result = await repository.create({ user });
+      const result = await repository.upsert({ user });
 
       expect(result.status).toBe(ResultStatus.FAILURE);
       expect(result.getError()).toBe('Database error');
       expect(createSpy).toHaveBeenCalledWith({
-        data: {
+        where: { id: '1' },
+        update: {
+          name: 'John Doe',
+          password: 'password123',
+        },
+        create: {
           name: 'John Doe',
           email: 'john@example.com',
           password: 'password123',

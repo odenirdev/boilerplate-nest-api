@@ -16,7 +16,7 @@ describe('UserService', () => {
         {
           provide: UserRepository,
           useValue: {
-            create: jest.fn(),
+            upsert: jest.fn(),
             one: jest.fn(),
             findByEmail: jest.fn(),
           },
@@ -49,11 +49,11 @@ describe('UserService', () => {
       jest
         .spyOn(userRepository, 'findByEmail')
         .mockResolvedValue(Result.fail('User not found'));
-      jest.spyOn(userRepository, 'create').mockResolvedValue(result);
+      jest.spyOn(userRepository, 'upsert').mockResolvedValue(result);
 
       const serviceResult = await userService.create({ userDto });
 
-      expect(userRepository.create).toHaveBeenCalledWith({
+      expect(userRepository.upsert).toHaveBeenCalledWith({
         user,
       });
       expect(serviceResult).toEqual(result);
@@ -70,14 +70,14 @@ describe('UserService', () => {
       jest
         .spyOn(userRepository, 'findByEmail')
         .mockResolvedValue(Result.fail('User not found'));
-      jest.spyOn(userRepository, 'create').mockResolvedValue(result);
+      jest.spyOn(userRepository, 'upsert').mockResolvedValue(result);
 
       const serviceResult = await userService.create({ userDto });
 
       expect(userRepository.findByEmail).toHaveBeenCalledWith({
         email: userDto.email,
       });
-      expect(userRepository.create).toHaveBeenCalledWith({
+      expect(userRepository.upsert).toHaveBeenCalledWith({
         user: expect.any(User),
       });
       expect(serviceResult).toEqual(result);

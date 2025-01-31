@@ -8,12 +8,17 @@ import { Result } from '@this/shared/utils/result';
 export class PrismaUserRepository implements UserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(params: { user: User }): Promise<Result<User>> {
+  async upsert(params: { user: User }): Promise<Result<User>> {
     try {
       const { user } = params;
 
-      const createdUser = await this.prisma.user.create({
-        data: {
+      const upsertedUser = await this.prisma.user.upsert({
+        where: { id: user.id },
+        update: {
+          name: user.name,
+          password: user['password'],
+        },
+        create: {
           name: user.name,
           email: user.email,
           password: user['password'],
@@ -22,10 +27,10 @@ export class PrismaUserRepository implements UserRepository {
 
       return Result.ok<User>(
         new User({
-          name: createdUser.name,
-          email: createdUser.email,
-          password: createdUser.password,
-          id: createdUser.id,
+          name: upsertedUser.name,
+          email: upsertedUser.email,
+          password: upsertedUser.password,
+          id: upsertedUser.id,
         }),
       );
     } catch (error) {
