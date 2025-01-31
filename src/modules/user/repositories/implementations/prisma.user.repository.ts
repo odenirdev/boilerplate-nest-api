@@ -8,7 +8,9 @@ import { Result } from '@this/shared/utils/result';
 export class PrismaUserRepository implements UserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(user: User): Promise<Result<User>> {
+  async create(params: { user: User }): Promise<Result<User>> {
+    const { user } = params;
+
     const createdUser = await this.prisma.user.create({
       data: {
         name: user.name,
@@ -18,22 +20,31 @@ export class PrismaUserRepository implements UserRepository {
     });
 
     return Result.ok<User>(
-      new User(
-        createdUser.name,
-        createdUser.email,
-        createdUser.password,
-        createdUser.id,
-      ),
+      new User({
+        name: createdUser.name,
+        email: createdUser.email,
+        password: createdUser.password,
+        id: createdUser.id,
+      }),
     );
   }
 
-  async one(id: string): Promise<Result<User | null>> {
+  async one(params: { id: string }): Promise<Result<User | null>> {
+    const { id } = params;
+
     const user = await this.prisma.user.findUnique({
       where: { id },
     });
 
     return user
-      ? Result.ok<User>(new User(user.name, user.email, user.password, user.id))
+      ? Result.ok<User>(
+          new User({
+            name: user.name,
+            email: user.email,
+            password: user.password,
+            id: user.id,
+          }),
+        )
       : null;
   }
 }

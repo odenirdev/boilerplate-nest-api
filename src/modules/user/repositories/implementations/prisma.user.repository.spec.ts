@@ -34,7 +34,12 @@ describe('PrismaUserRepository', () => {
 
   describe('create', () => {
     it('should create and return a new user', async () => {
-      const user = new User('John Doe', 'john@example.com', 'password123', '1');
+      const user = new User({
+        name: 'John Doe',
+        email: 'john@example.com',
+        password: 'password123',
+        id: '1',
+      });
       const createdUser = {
         id: '1',
         name: 'John Doe',
@@ -48,7 +53,7 @@ describe('PrismaUserRepository', () => {
         .spyOn(prismaService.user, 'create')
         .mockResolvedValue(createdUser);
 
-      const result = await repository.create(user);
+      const result = await repository.create({ user });
 
       expect(result).toEqual(Result.ok<User>(user));
       expect(createSpy).toHaveBeenCalledWith({
@@ -76,11 +81,18 @@ describe('PrismaUserRepository', () => {
         .spyOn(prismaService.user, 'findUnique')
         .mockResolvedValue(user);
 
-      const result = await repository.one('1');
+      const result = await repository.one({
+        id: '1',
+      });
 
       expect(result).toEqual(
         Result.ok<User>(
-          new User(user.name, user.email, user.password, user.id),
+          new User({
+            id: '1',
+            name: 'John Doe',
+            email: 'john@example.com',
+            password: 'password123',
+          }),
         ),
       );
       expect(findUniqueSpy).toHaveBeenCalledWith({
@@ -93,7 +105,9 @@ describe('PrismaUserRepository', () => {
         .spyOn(prismaService.user, 'findUnique')
         .mockResolvedValue(null);
 
-      const result = await repository.one('1');
+      const result = await repository.one({
+        id: '1',
+      });
 
       expect(result).toBeNull();
       expect(findUniqueSpy).toHaveBeenCalledWith({

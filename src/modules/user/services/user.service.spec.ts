@@ -33,24 +33,30 @@ describe('UserService', () => {
 
   describe('create', () => {
     it('should create a user and return success result', async () => {
-      const dto: UserDto = {
+      const userDto: UserDto = {
         name: 'John Doe',
         email: 'john@example.com',
         password: 'password',
       };
-      const user = new User(dto.name, dto.email, dto.password);
+      const user = new User({
+        name: userDto.name,
+        email: userDto.email,
+        password: userDto.password,
+      });
       const result = Result.ok(user);
 
       jest.spyOn(userRepository, 'create').mockResolvedValue(result);
 
-      const serviceResult = await userService.create(dto);
+      const serviceResult = await userService.create({ userDto });
 
-      expect(userRepository.create).toHaveBeenCalledWith(user);
+      expect(userRepository.create).toHaveBeenCalledWith({
+        user,
+      });
       expect(serviceResult).toEqual(result);
     });
 
     it('should return failure result if user creation fails', async () => {
-      const dto: UserDto = {
+      const userDto: UserDto = {
         name: 'John Doe',
         email: 'john@example.com',
         password: 'password',
@@ -59,9 +65,11 @@ describe('UserService', () => {
 
       jest.spyOn(userRepository, 'create').mockResolvedValue(result);
 
-      const serviceResult = await userService.create(dto);
+      const serviceResult = await userService.create({ userDto });
 
-      expect(userRepository.create).toHaveBeenCalledWith(expect.any(User));
+      expect(userRepository.create).toHaveBeenCalledWith({
+        user: expect.any(User),
+      });
       expect(serviceResult).toEqual(result);
     });
   });
@@ -69,14 +77,19 @@ describe('UserService', () => {
   describe('one', () => {
     it('should return a user by id', async () => {
       const id = '1';
-      const user = new User('John Doe', 'john@example.com', 'password');
+      const user = new User({
+        name: 'John Doe',
+        email: 'john@example.com',
+        password: 'password',
+        id,
+      });
       const result = Result.ok(user);
 
       jest.spyOn(userRepository, 'one').mockResolvedValue(result);
 
-      const serviceResult = await userService.one(id);
+      const serviceResult = await userService.one({ id });
 
-      expect(userRepository.one).toHaveBeenCalledWith(id);
+      expect(userRepository.one).toHaveBeenCalledWith({ id });
       expect(serviceResult).toEqual(result);
     });
 
@@ -86,9 +99,9 @@ describe('UserService', () => {
 
       jest.spyOn(userRepository, 'one').mockResolvedValue(result);
 
-      const serviceResult = await userService.one(id);
+      const serviceResult = await userService.one({ id });
 
-      expect(userRepository.one).toHaveBeenCalledWith(id);
+      expect(userRepository.one).toHaveBeenCalledWith({ id });
       expect(serviceResult).toEqual(result);
     });
   });

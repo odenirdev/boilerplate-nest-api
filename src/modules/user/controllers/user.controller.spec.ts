@@ -47,7 +47,12 @@ describe('UserController', () => {
         password: 'password123',
       };
       const result = Result.ok<User>(
-        new User(dto.name, dto.email, dto.password, '1'),
+        new User({
+          name: dto.name,
+          email: dto.email,
+          password: dto.password,
+          id: '1',
+        }),
       );
       const res = mockResponse();
 
@@ -90,7 +95,12 @@ describe('UserController', () => {
         password: 'password123',
       };
       const result = Result.ok<User>(
-        new User(dto.name, dto.email, dto.password, id),
+        new User({
+          name: dto.name,
+          email: dto.email,
+          password: dto.password,
+          id,
+        }),
       );
       const res = mockResponse();
 

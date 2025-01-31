@@ -8,15 +8,19 @@ import { Result } from '@this/shared/utils/result';
 export class UserService {
   constructor(private readonly userRepository: UserRepository) {}
 
-  async create(dto: UserDto): Promise<Result<User>> {
-    const { name, email, password } = dto;
+  async create(params: { userDto: UserDto }): Promise<Result<User>> {
+    const {
+      userDto: { name, email, password },
+    } = params;
 
-    const user = new User(name, email, password);
+    const user = new User({ name, email, password });
 
-    return this.userRepository.create(user);
+    return this.userRepository.create({ user });
   }
 
-  async one(id: string): Promise<Result<User>> {
-    return this.userRepository.one(id);
+  async one(params: { id: string }): Promise<Result<User>> {
+    const { id } = params;
+
+    return this.userRepository.one({ id });
   }
 }

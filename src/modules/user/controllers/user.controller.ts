@@ -21,15 +21,15 @@ export class UserController extends BaseController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() dto: UserDto, @Res() response: Response) {
-    const result = await this.userService.create(dto);
+  async create(@Body() userDto: UserDto, @Res() response: Response) {
+    const result = await this.userService.create({ userDto });
 
     return this.handleResult(result, response, HttpStatus.CREATED);
   }
 
   @Get(':id')
   async one(@Param('id') id: string, @Res() response: Response) {
-    const result = await this.userService.one(id);
+    const result = await this.userService.one({ id });
 
     return this.handleResult(result, response);
   }
