@@ -4,14 +4,6 @@ import { PrismaUserRepository } from './prisma.user.repository';
 import { PrismaService } from '@this/shared/services/prisma/prisma.service';
 import { Result } from '@this/shared/utils/result';
 
-// Criação manual dos mocks
-class MockPrismaService {
-  user = {
-    create: async () => ({}),
-    findUnique: async () => ({}),
-  };
-}
-
 describe('PrismaUserRepository', () => {
   let repository: PrismaUserRepository;
   let prismaService: PrismaService;
@@ -20,7 +12,15 @@ describe('PrismaUserRepository', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PrismaUserRepository,
-        { provide: PrismaService, useClass: MockPrismaService },
+        {
+          provide: PrismaService,
+          useValue: {
+            user: {
+              create: jest.fn(),
+              findUnique: jest.fn(),
+            },
+          },
+        },
       ],
     }).compile();
 
@@ -44,7 +44,6 @@ describe('PrismaUserRepository', () => {
         updatedAt: new Date(),
       };
 
-      // Usando jest.spyOn e mockImplementation para o método create
       const createSpy = jest
         .spyOn(prismaService.user, 'create')
         .mockResolvedValue(createdUser);
@@ -73,7 +72,6 @@ describe('PrismaUserRepository', () => {
         updatedAt: new Date(),
       };
 
-      // Usando jest.spyOn e mockImplementation para o método findUnique
       const findUniqueSpy = jest
         .spyOn(prismaService.user, 'findUnique')
         .mockResolvedValue(user);
@@ -91,7 +89,6 @@ describe('PrismaUserRepository', () => {
     });
 
     it('should return null if user not found', async () => {
-      // Usando jest.spyOn e mockImplementation para o método findUnique
       const findUniqueSpy = jest
         .spyOn(prismaService.user, 'findUnique')
         .mockResolvedValue(null);
