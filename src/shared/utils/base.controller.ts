@@ -14,7 +14,9 @@ export class BaseController {
         error: 'Internal Server Error',
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       };
-      return response.status(400).json(errorResponse);
+      return response
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json(errorResponse);
     }
 
     return response.status(statusCode).json(result.getValue());

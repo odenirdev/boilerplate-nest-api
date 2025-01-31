@@ -38,9 +38,13 @@ describe('BaseController', () => {
 
     baseController.handleResult(result, mockResponse);
 
-    expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
+    expect(mockResponse.status).toHaveBeenCalledWith(
+      HttpStatus.INTERNAL_SERVER_ERROR,
+    );
     expect(mockResponse.json).toHaveBeenCalledWith({
-      message: 'Error occurred',
+      error: 'Internal Server Error',
+      message: ['Error occurred'],
+      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
     });
   });
 });

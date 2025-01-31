@@ -5,6 +5,7 @@ import { Result } from '@this/shared/utils/result';
 import { Response } from 'express';
 import { User } from '../entities/user.entity';
 import { UserController } from './user.controller';
+import { HttpStatus } from '@nestjs/common';
 
 describe('UserController', () => {
   let userController: UserController;
@@ -41,16 +42,16 @@ describe('UserController', () => {
 
   describe('create', () => {
     it('should create a user and return status 201', async () => {
-      const dto: UserDto = {
+      const userDto: UserDto = {
         name: 'Test User',
         email: 'test@user.com',
         password: 'password123',
       };
       const result = Result.ok<User>(
         new User({
-          name: dto.name,
-          email: dto.email,
-          password: dto.password,
+          name: userDto.name,
+          email: userDto.email,
+          password: userDto.password,
           id: '1',
         }),
       );
@@ -58,15 +59,15 @@ describe('UserController', () => {
 
       jest.spyOn(userService, 'create').mockResolvedValue(result);
 
-      await userController.create(dto, res);
+      await userController.create(userDto, res);
 
-      expect(userService.create).toHaveBeenCalledWith(dto);
+      expect(userService.create).toHaveBeenCalledWith({ userDto });
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith(result.getValue());
     });
 
     it('should return an error if creation fails', async () => {
-      const dto: UserDto = {
+      const userDto: UserDto = {
         name: 'Test User',
         email: 'test@user.com',
         password: 'password123',
@@ -76,12 +77,14 @@ describe('UserController', () => {
 
       jest.spyOn(userService, 'create').mockResolvedValue(result);
 
-      await userController.create(dto, res);
+      await userController.create(userDto, res);
 
-      expect(userService.create).toHaveBeenCalledWith(dto);
-      expect(res.status).toHaveBeenCalledWith(400);
+      expect(userService.create).toHaveBeenCalledWith({ userDto });
+      expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({
-        message: result.getError(),
+        error: 'Internal Server Error',
+        message: [result.getError()],
+        statusCode: 500,
       });
     });
   });
@@ -108,7 +111,7 @@ describe('UserController', () => {
 
       await userController.one(id, res);
 
-      expect(userService.one).toHaveBeenCalledWith(id);
+      expect(userService.one).toHaveBeenCalledWith({ id });
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json).toHaveBeenCalledWith(result.getValue());
     });
@@ -122,10 +125,12 @@ describe('UserController', () => {
 
       await userController.one(id, res);
 
-      expect(userService.one).toHaveBeenCalledWith(id);
-      expect(res.status).toHaveBeenCalledWith(400);
+      expect(userService.one).toHaveBeenCalledWith({ id });
+      expect(res.status).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
       expect(res.json).toHaveBeenCalledWith({
-        message: result.getError(),
+        error: 'Internal Server Error',
+        message: [result.getError()],
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       });
     });
   });
