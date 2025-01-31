@@ -9,7 +9,12 @@ export class BaseController {
     statusCode: HttpStatus = HttpStatus.OK,
   ) {
     if (result.status === ResultStatus.FAILURE) {
-      return response.status(400).json({ message: result.getError() });
+      const errorResponse = {
+        message: [result.getError()],
+        error: 'Internal Server Error',
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      };
+      return response.status(400).json(errorResponse);
     }
 
     return response.status(statusCode).json(result.getValue());
