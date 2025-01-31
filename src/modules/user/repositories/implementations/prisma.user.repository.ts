@@ -9,24 +9,28 @@ export class PrismaUserRepository implements UserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(params: { user: User }): Promise<Result<User>> {
-    const { user } = params;
+    try {
+      const { user } = params;
 
-    const createdUser = await this.prisma.user.create({
-      data: {
-        name: user.name,
-        email: user.email,
-        password: user['password'],
-      },
-    });
+      const createdUser = await this.prisma.user.create({
+        data: {
+          name: user.name,
+          email: user.email,
+          password: user['password'],
+        },
+      });
 
-    return Result.ok<User>(
-      new User({
-        name: createdUser.name,
-        email: createdUser.email,
-        password: createdUser.password,
-        id: createdUser.id,
-      }),
-    );
+      return Result.ok<User>(
+        new User({
+          name: createdUser.name,
+          email: createdUser.email,
+          password: createdUser.password,
+          id: createdUser.id,
+        }),
+      );
+    } catch (error) {
+      return Result.fail<User>(error.message);
+    }
   }
 
   async one(params: { id: string }): Promise<Result<User | null>> {

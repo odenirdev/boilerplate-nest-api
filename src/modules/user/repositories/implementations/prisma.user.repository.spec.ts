@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { User } from '../../entities/user.entity';
 import { PrismaUserRepository } from './prisma.user.repository';
 import { PrismaService } from '@this/shared/services/prisma/prisma.service';
-import { Result } from '@this/shared/utils/result';
+import { Result, ResultStatus } from '@this/shared/utils/result';
 
 describe('PrismaUserRepository', () => {
   let repository: PrismaUserRepository;
@@ -56,6 +56,31 @@ describe('PrismaUserRepository', () => {
       const result = await repository.create({ user });
 
       expect(result).toEqual(Result.ok<User>(user));
+      expect(createSpy).toHaveBeenCalledWith({
+        data: {
+          name: 'John Doe',
+          email: 'john@example.com',
+          password: 'password123',
+        },
+      });
+    });
+
+    it('should return a failure result if an error occurs', async () => {
+      const user = new User({
+        name: 'John Doe',
+        email: 'john@example.com',
+        password: 'password123',
+        id: '1',
+      });
+
+      const createSpy = jest
+        .spyOn(prismaService.user, 'create')
+        .mockRejectedValue(new Error('Database error'));
+
+      const result = await repository.create({ user });
+
+      expect(result.status).toBe(ResultStatus.FAILURE);
+      expect(result.getError()).toBe('Database error');
       expect(createSpy).toHaveBeenCalledWith({
         data: {
           name: 'John Doe',
