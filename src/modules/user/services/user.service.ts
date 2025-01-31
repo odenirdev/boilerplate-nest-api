@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { UserDto } from '../dtos/user.dto';
 import { UserRepository } from '../repositories/user.repository';
 import { User } from '../entities/user.entity';
-import { Result } from '@this/shared/utils/result';
+import { Result, ResultStatus } from '@this/shared/utils/result';
 
 @Injectable()
 export class UserService {
@@ -12,6 +12,11 @@ export class UserService {
     const {
       userDto: { name, email, password },
     } = params;
+
+    const findedUser = await this.userRepository.findByEmail({ email });
+    if (findedUser.status === ResultStatus.SUCCESS) {
+      return Result.fail('User already exists');
+    }
 
     const user = new User({ name, email, password });
 

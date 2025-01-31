@@ -18,6 +18,7 @@ describe('UserService', () => {
           useValue: {
             create: jest.fn(),
             one: jest.fn(),
+            findByEmail: jest.fn(),
           },
         },
       ],
@@ -45,6 +46,9 @@ describe('UserService', () => {
       });
       const result = Result.ok(user);
 
+      jest
+        .spyOn(userRepository, 'findByEmail')
+        .mockResolvedValue(Result.fail('User not found'));
       jest.spyOn(userRepository, 'create').mockResolvedValue(result);
 
       const serviceResult = await userService.create({ userDto });
@@ -63,14 +67,43 @@ describe('UserService', () => {
       };
       const result = Result.fail<User>('Error creating user');
 
+      jest
+        .spyOn(userRepository, 'findByEmail')
+        .mockResolvedValue(Result.fail('User not found'));
       jest.spyOn(userRepository, 'create').mockResolvedValue(result);
 
       const serviceResult = await userService.create({ userDto });
 
+      expect(userRepository.findByEmail).toHaveBeenCalledWith({
+        email: userDto.email,
+      });
       expect(userRepository.create).toHaveBeenCalledWith({
         user: expect.any(User),
       });
       expect(serviceResult).toEqual(result);
+    });
+
+    it('should return failure result if user already exists', async () => {
+      const userDto: UserDto = {
+        name: 'John Doe',
+        email: 'john@example.com',
+        password: 'password',
+      };
+      const existingUser = new User({
+        name: userDto.name,
+        email: userDto.email,
+        password: userDto.password,
+      });
+      const findResult = Result.ok(existingUser);
+
+      jest.spyOn(userRepository, 'findByEmail').mockResolvedValue(findResult);
+
+      const serviceResult = await userService.create({ userDto });
+
+      expect(userRepository.findByEmail).toHaveBeenCalledWith({
+        email: userDto.email,
+      });
+      expect(serviceResult).toEqual(Result.fail('User already exists'));
     });
   });
 
