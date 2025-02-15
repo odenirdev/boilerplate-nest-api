@@ -13,6 +13,8 @@ services:
       DATABASE_URL: ${DATABASE_URL}
     depends_on:
       - db
+    networks:
+      - app-network
 
   db:
     image: postgres:15-alpine
@@ -23,9 +25,15 @@ services:
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: myDatabase
+      POSTGRES_DB: mydatabase
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
   postgres_data:
