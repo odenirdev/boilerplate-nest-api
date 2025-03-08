@@ -3,6 +3,8 @@ import { UserDto } from '../dtos/user.dto';
 import { UserRepository } from '../repositories/user.repository';
 import { User } from '../entities/user.entity';
 import { Result, ResultStatus } from '@this/shared/utils/result';
+import { PaginatedResponseDto } from '@this/shared/dtos/paginated.response.dto';
+import { PaginatedRequestDto } from '@this/shared/dtos/paginated.request.dto';
 
 @Injectable()
 export class UserService {
@@ -27,5 +29,11 @@ export class UserService {
     const { id } = params;
 
     return this.userRepository.one({ id });
+  }
+
+  async paginate(
+    params: PaginatedRequestDto<Partial<UserDto>>,
+  ): Promise<Result<PaginatedResponseDto<User>>> {
+    return this.userRepository.paginate(params);
   }
 }

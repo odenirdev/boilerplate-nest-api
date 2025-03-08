@@ -3,6 +3,9 @@ import { UserRepository } from '../user.repository';
 import { PrismaService } from '@this/shared/services/prisma/prisma.service';
 import { User } from '../../entities/user.entity';
 import { Result } from '@this/shared/utils/result';
+import { PaginatedResponseDto } from '@this/shared/dtos/paginated.response.dto';
+import { UserDto } from '../../dtos/user.dto';
+import { PaginatedRequestDto } from '@this/shared/dtos/paginated.request.dto';
 
 @Injectable()
 export class PrismaUserRepository implements UserRepository {
@@ -76,5 +79,42 @@ export class PrismaUserRepository implements UserRepository {
         id: user.id,
       }),
     );
+  }
+
+  async paginate(
+    params: PaginatedRequestDto<Partial<UserDto>>,
+  ): Promise<Result<PaginatedResponseDto<User>>> {
+    const page = Number(params.page);
+    const limit = Number(params.limit);
+    const { q } = params;
+
+    const where = Object.keys(q || {}).reduce((acc, key) => {
+      if (q[key]) {
+        acc[key] = {
+          contains: q[key],
+        };
+      }
+      return acc;
+    }, {});
+
+    const users = await this.prisma.user.findMany({
+      skip: (page - 1) * limit,
+      take: limit,
+      where,
+    });
+
+    return Result.ok<PaginatedResponseDto<User>>({
+      items: users.map((user) => {
+        return new User({
+          name: user.name,
+          email: user.email,
+          password: user.password,
+          id: user.id,
+        });
+      }),
+      page,
+      limit,
+      total: await this.prisma.user.count({ where }),
+    });
   }
 }

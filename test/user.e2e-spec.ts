@@ -57,4 +57,27 @@ describe('UserModule', () => {
       });
     });
   });
+
+  describe('GET: /users', () => {
+    beforeEach(() => {
+      jest.spyOn(mockUserService, 'paginate');
+    });
+
+    it('should return OK', async () => {
+      await request(app.getHttpServer())
+        .get('/users')
+        .expect(200, {
+          items: [
+            {
+              id: 1,
+              name: 'John Doe',
+              email: 'john.doe@example.com',
+            },
+          ],
+          total: 1,
+          page: 1,
+          limit: 10,
+        });
+    });
+  });
 });

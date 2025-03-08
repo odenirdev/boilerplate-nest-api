@@ -124,4 +124,33 @@ describe('UserController', () => {
       });
     });
   });
+
+  describe('paginate', () => {
+    it('should return a paginated list of users', async () => {
+      const result = Result.ok({
+        items: [
+          new User({
+            name: 'Test User',
+            email: 'test@user.com',
+            password: 'password123',
+            id: '1',
+          }),
+        ],
+        total: 1,
+        page: 1,
+        limit: 10,
+      });
+
+      jest.spyOn(userService, 'paginate').mockResolvedValue(result);
+
+      await userController.paginate(
+        { page: 1, limit: 10 },
+        mockResponse as unknown as Response,
+      );
+
+      expect(userService.paginate).toHaveBeenCalledWith({ page: 1, limit: 10 });
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalledWith(result.getValue());
+    });
+  });
 });
