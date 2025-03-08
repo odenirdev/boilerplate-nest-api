@@ -6,17 +6,12 @@ import { Response } from 'express';
 import { User } from '../entities/user.entity';
 import { UserController } from './user.controller';
 import { HttpStatus } from '@nestjs/common';
+import { mockUserService } from '../../../../test/mocks/user/user.service.mock';
+import { mockResponse } from '../../../../test/mocks/response';
 
 describe('UserController', () => {
   let userController: UserController;
   let userService: UserService;
-
-  const mockResponse = () => {
-    const res: Partial<Response> = {};
-    res.status = jest.fn().mockReturnValue(res);
-    res.json = jest.fn().mockReturnValue(res);
-    return res as Response;
-  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -24,10 +19,7 @@ describe('UserController', () => {
       providers: [
         {
           provide: UserService,
-          useValue: {
-            create: jest.fn(),
-            one: jest.fn(),
-          },
+          useValue: mockUserService,
         },
       ],
     }).compile();
@@ -55,15 +47,14 @@ describe('UserController', () => {
           id: '1',
         }),
       );
-      const res = mockResponse();
 
       jest.spyOn(userService, 'create').mockResolvedValue(result);
 
-      await userController.create(userDto, res);
+      await userController.create(userDto, mockResponse as unknown as Response);
 
       expect(userService.create).toHaveBeenCalledWith({ userDto });
-      expect(res.status).toHaveBeenCalledWith(201);
-      expect(res.json).toHaveBeenCalledWith(result.getValue());
+      expect(mockResponse.status).toHaveBeenCalledWith(201);
+      expect(mockResponse.json).toHaveBeenCalledWith(result.getValue());
     });
 
     it('should return an error if creation fails', async () => {
@@ -73,15 +64,14 @@ describe('UserController', () => {
         password: 'password123',
       };
       const result = Result.fail<User>('Error creating user');
-      const res = mockResponse();
 
       jest.spyOn(userService, 'create').mockResolvedValue(result);
 
-      await userController.create(userDto, res);
+      await userController.create(userDto, mockResponse as unknown as Response);
 
       expect(userService.create).toHaveBeenCalledWith({ userDto });
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith({
         error: 'Internal Server Error',
         message: [result.getError()],
         statusCode: 500,
@@ -105,33 +95,62 @@ describe('UserController', () => {
           id,
         }),
       );
-      const res = mockResponse();
 
       jest.spyOn(userService, 'one').mockResolvedValue(result);
 
-      await userController.one(id, res);
+      await userController.one(id, mockResponse as unknown as Response);
 
       expect(userService.one).toHaveBeenCalledWith({ id });
-      expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith(result.getValue());
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalledWith(result.getValue());
     });
 
     it('should return an error if user not found', async () => {
       const id = '1';
       const result = Result.fail<User>('User not found');
-      const res = mockResponse();
 
       jest.spyOn(userService, 'one').mockResolvedValue(result);
 
-      await userController.one(id, res);
+      await userController.one(id, mockResponse as unknown as Response);
 
       expect(userService.one).toHaveBeenCalledWith({ id });
-      expect(res.status).toHaveBeenCalledWith(HttpStatus.INTERNAL_SERVER_ERROR);
-      expect(res.json).toHaveBeenCalledWith({
+      expect(mockResponse.status).toHaveBeenCalledWith(
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+      expect(mockResponse.json).toHaveBeenCalledWith({
         error: 'Internal Server Error',
         message: [result.getError()],
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       });
+    });
+  });
+
+  describe('paginate', () => {
+    it('should return a paginated list of users', async () => {
+      const result = Result.ok({
+        items: [
+          new User({
+            name: 'Test User',
+            email: 'test@user.com',
+            password: 'password123',
+            id: '1',
+          }),
+        ],
+        total: 1,
+        page: 1,
+        limit: 10,
+      });
+
+      jest.spyOn(userService, 'paginate').mockResolvedValue(result);
+
+      await userController.paginate(
+        { page: 1, limit: 10 },
+        mockResponse as unknown as Response,
+      );
+
+      expect(userService.paginate).toHaveBeenCalledWith({ page: 1, limit: 10 });
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(mockResponse.json).toHaveBeenCalledWith(result.getValue());
     });
   });
 });
