@@ -2,23 +2,19 @@ import { BaseController } from './base.controller';
 import { Result } from './result';
 import { Response } from 'express';
 import { HttpStatus } from '@nestjs/common';
+import { mockResponse } from '../../../test/mocks/response';
 
 describe('BaseController', () => {
   let baseController: BaseController;
-  let mockResponse: Response;
 
   beforeEach(() => {
     baseController = new BaseController();
-    mockResponse = {
-      status: jest.fn().mockReturnThis(),
-      json: jest.fn().mockReturnThis(),
-    } as unknown as Response;
   });
 
   it('should return success response with status code 200 by default', () => {
     const result = Result.ok({ data: 'test' });
 
-    baseController.handleResult(result, mockResponse);
+    baseController.handleResult(result, mockResponse as unknown as Response);
 
     expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
     expect(mockResponse.json).toHaveBeenCalledWith({ data: 'test' });
@@ -27,7 +23,11 @@ describe('BaseController', () => {
   it('should return success response with custom status code', () => {
     const result = Result.ok({ data: 'test' });
 
-    baseController.handleResult(result, mockResponse, HttpStatus.CREATED);
+    baseController.handleResult(
+      result,
+      mockResponse as unknown as Response,
+      HttpStatus.CREATED,
+    );
 
     expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.CREATED);
     expect(mockResponse.json).toHaveBeenCalledWith({ data: 'test' });
@@ -36,7 +36,7 @@ describe('BaseController', () => {
   it('should return failure response with status code 400', () => {
     const result = Result.fail('Error occurred');
 
-    baseController.handleResult(result, mockResponse);
+    baseController.handleResult(result, mockResponse as unknown as Response);
 
     expect(mockResponse.status).toHaveBeenCalledWith(
       HttpStatus.INTERNAL_SERVER_ERROR,

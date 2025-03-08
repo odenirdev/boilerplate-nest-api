@@ -18,6 +18,8 @@ describe('PrismaUserRepository', () => {
             user: {
               upsert: jest.fn(),
               findUnique: jest.fn(),
+              findMany: jest.fn(),
+              count: jest.fn(),
             },
           },
         },
@@ -147,6 +149,132 @@ describe('PrismaUserRepository', () => {
       expect(result).toBeNull();
       expect(findUniqueSpy).toHaveBeenCalledWith({
         where: { id: '1' },
+      });
+    });
+  });
+
+  describe('paginate', () => {
+    it('should return paginated users', async () => {
+      const users = [
+        {
+          id: '1',
+          name: 'John Doe',
+          email: 'john@example.com',
+          password: 'password123',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      const findManySpy = jest
+        .spyOn(prismaService.user, 'findMany')
+        .mockResolvedValue(users);
+
+      const countSpy = jest
+        .spyOn(prismaService.user, 'count')
+        .mockResolvedValue(1);
+
+      const result = await repository.paginate({
+        page: 1,
+        limit: 10,
+      });
+
+      expect(result).toEqual(
+        Result.ok({
+          items: [
+            new User({
+              id: '1',
+              name: 'John Doe',
+              email: 'john@example.com',
+              password: 'password123',
+            }),
+          ],
+          total: 1,
+          page: 1,
+          limit: 10,
+        }),
+      );
+      expect(findManySpy).toHaveBeenCalledWith({
+        skip: 0,
+        take: 10,
+        where: {},
+      });
+      expect(countSpy).toHaveBeenCalled();
+    });
+  });
+
+  describe('filter', () => {
+    it('should return users filtered by name', async () => {
+      const users = [
+        {
+          id: '1',
+          name: 'John Doe',
+          email: 'john@example.com',
+          password: 'password123',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: '2',
+          name: 'Jane Doe',
+          email: 'jane@example.com',
+          password: 'password123',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      const findManySpy = jest
+        .spyOn(prismaService.user, 'findMany')
+        .mockResolvedValue(users);
+      const countSpy = jest
+        .spyOn(prismaService.user, 'count')
+        .mockResolvedValue(2);
+
+      const result = await repository.paginate({
+        page: 1,
+        limit: 10,
+        q: {
+          name: 'Doe',
+        },
+      });
+
+      expect(result).toEqual(
+        Result.ok({
+          items: [
+            new User({
+              id: '1',
+              name: 'John Doe',
+              email: 'john@example.com',
+              password: 'password123',
+            }),
+            new User({
+              id: '2',
+              name: 'Jane Doe',
+              email: 'jane@example.com',
+              password: 'password123',
+            }),
+          ],
+          total: 2,
+          page: 1,
+          limit: 10,
+        }),
+      );
+      expect(findManySpy).toHaveBeenCalledWith({
+        skip: 0,
+        take: 10,
+        where: {
+          name: {
+            contains: 'Doe',
+          },
+        },
+      });
+      expect(countSpy).toHaveBeenCalledWith({
+        where: {
+          name: {
+            contains: 'Doe',
+          },
+        },
       });
     });
   });

@@ -19,6 +19,7 @@ describe('UserService', () => {
             upsert: jest.fn(),
             one: jest.fn(),
             findByEmail: jest.fn(),
+            paginate: jest.fn(),
           },
         },
       ],
@@ -135,6 +136,34 @@ describe('UserService', () => {
       const serviceResult = await userService.one({ id });
 
       expect(userRepository.one).toHaveBeenCalledWith({ id });
+      expect(serviceResult).toEqual(result);
+    });
+  });
+
+  describe('paginate', () => {
+    it('should return a paginated list of users', async () => {
+      const users = [
+        new User({
+          name: 'John Doe',
+          email: 'john@example.com',
+          password: 'password',
+        }),
+      ];
+      const result = Result.ok({
+        items: users,
+        total: 1,
+        page: 1,
+        limit: 10,
+      });
+
+      jest.spyOn(userRepository, 'paginate').mockResolvedValue(result);
+
+      const serviceResult = await userService.paginate({ page: 1, limit: 10 });
+
+      expect(userRepository.paginate).toHaveBeenCalledWith({
+        page: 1,
+        limit: 10,
+      });
       expect(serviceResult).toEqual(result);
     });
   });
