@@ -1,83 +1,116 @@
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+// test/user.e2e-spec.ts
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { Test } from '@nestjs/testing';
 import * as request from 'supertest';
-import { UserService } from '@this/modules/user/services/user.service';
-import { AppModule } from '@this/app.module';
-import { mockUserService } from './mocks/user/user.service.mock';
+import { AppModule } from '../src/app.module';
+import { PrismaClient } from '@prisma/client';
+import { UserDto } from '../src/modules/user/dtos/user.dto';
 
-describe('UserModule', () => {
+describe('UserController (e2e)', () => {
   let app: INestApplication;
+  let prisma: PrismaClient;
 
-  beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
-    })
-      .overrideProvider(UserService)
-      .useValue(mockUserService)
-      .compile();
+    }).compile();
 
-    app = moduleFixture.createNestApplication();
+    app = moduleRef.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
     await app.init();
+
+    // instancia e conecta o PrismaClient manualmente
+    prisma = new PrismaClient();
+    await prisma.$connect();
+
+    // limpa a tabela de usuários
+    await prisma.user.deleteMany();
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
+  afterAll(async () => {
+    await app.close();
+    await prisma.$disconnect();
   });
 
-  describe('POST: /users', () => {
-    beforeEach(() => {
-      jest.spyOn(mockUserService, 'create');
-    });
+  describe('/POST users', () => {
+    it('should create a user and return 201 + body', async () => {
+      const payload: UserDto = {
+        email: 'test@example.com',
+        name: 'Test User',
+        password: 'Abcd1234!',
+      };
 
-    it('should return OK', async () => {
-      await request(app.getHttpServer())
+      const res = await request(app.getHttpServer())
         .post('/users')
-        .send({
-          name: 'John Doe',
-          email: 'john.doe@example.com',
-        })
-        .expect(201, {
-          id: 1,
-          name: 'John Doe',
-          email: 'john.doe@example.com',
-        });
-    });
-  });
+        .send(payload)
+        .expect(201);
 
-  describe('GET: /users/:id', () => {
-    beforeEach(() => {
-      jest.spyOn(mockUserService, 'one');
-    });
-
-    it('should return OK', async () => {
-      await request(app.getHttpServer()).get('/users/1').expect(200, {
-        id: 1,
-        name: 'John Doe',
-        email: 'john.doe@example.com',
+      expect(res.body).toEqual({
+        id: expect.any(String),
+        email: payload.email,
+        name: payload.name,
       });
     });
   });
 
-  describe('GET: /users', () => {
-    beforeEach(() => {
-      jest.spyOn(mockUserService, 'paginate');
+  describe('/GET users/:id', () => {
+    let userId: string;
+
+    beforeAll(async () => {
+      const user = await prisma.user.create({
+        data: { email: 'foo@bar.com', name: 'Foo Bar', password: 'Xyz987!' },
+      });
+      userId = user.id;
     });
 
-    it('should return OK', async () => {
-      await request(app.getHttpServer())
+    it('should return 200 + user data', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/users/${userId}`)
+        .expect(200);
+
+      expect(res.body).toEqual({
+        id: userId,
+        email: 'foo@bar.com',
+        name: 'Foo Bar',
+      });
+    });
+  });
+
+  describe('/GET users (paginate)', () => {
+    beforeAll(async () => {
+      await prisma.user.createMany({
+        data: [
+          { email: 'a@a.com', name: 'A', password: 'Pwd1!' },
+          { email: 'b@b.com', name: 'B', password: 'Pwd2!' },
+          { email: 'c@c.com', name: 'C', password: 'Pwd3!' },
+        ],
+      });
+    });
+
+    it('should return paginated list with metadata', async () => {
+      const res = await request(app.getHttpServer())
         .get('/users')
-        .expect(200, {
-          items: [
-            {
-              id: 1,
-              name: 'John Doe',
-              email: 'john.doe@example.com',
-            },
-          ],
-          total: 1,
-          page: 1,
-          limit: 10,
-        });
+        .query({ page: 1, limit: 2 })
+        .expect(200);
+
+      // Assert the new shape:
+      expect(res.body).toMatchObject({
+        items: expect.arrayContaining([
+          expect.objectContaining({
+            id: expect.any(String),
+            email: expect.any(String),
+            name: expect.any(String),
+          }),
+        ]),
+        total: expect.any(Number),
+        page: 1,
+        limit: 2,
+      });
+
+      // E garanta exatamente 2 itens no array:
+      expect(res.body.items).toHaveLength(2);
     });
   });
 });

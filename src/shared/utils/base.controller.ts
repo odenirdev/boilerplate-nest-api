@@ -19,6 +19,8 @@ export class BaseController {
         .json(errorResponse);
     }
 
-    return response.status(statusCode).json(result.getValue());
+    const data = result.getValue();
+    delete data?.password;
+    return response.status(statusCode).json(data);
   }
 }
