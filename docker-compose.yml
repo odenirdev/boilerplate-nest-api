@@ -1,19 +1,6 @@
 version: '3.8'
 
 services:
-  app:
-    build: .
-    ports:
-      - '8080:8080'
-    volumes:
-      - .:/app
-      - /app/node_modules
-    environment:
-      NODE_ENV: ${NODE_ENV}
-      DATABASE_URL: ${DATABASE_URL}
-    depends_on:
-      - db
-
   db:
     image: postgres:15-alpine
     container_name: postgres_container
@@ -23,9 +10,15 @@ services:
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: myDatabase
+      POSTGRES_DB: mydatabase
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
   postgres_data:

@@ -1,0 +1,28 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Debug NestJS",
+        "type": "node",
+        "request": "launch",
+        "cwd": "${workspaceFolder}",
+        // Point to your .env file so VSCode loads it automatically
+        "envFile": "${workspaceFolder}/.env",
+        "runtimeArgs": ["--nolazy", "-r", "ts-node/register", "-r", "tsconfig-paths/register"],
+        "args": [
+          "${workspaceFolder}/src/main.ts"
+        ],
+        // You can still override or add env vars here if needed
+        "env": {
+          // Example: override NODE_ENV for debug sessions
+          // "NODE_ENV": "development"
+        },
+        "sourceMaps": true,
+        "skipFiles": [
+          "<node_internals>/**"
+        ],
+        "console": "integratedTerminal"
+      }
+    ]
+  }
+  
